@@ -1,69 +1,65 @@
-# Deploiement automatise
-
-> Competence evaluee : `C31` — Mettre en oeuvre un systeme de deploiement automatise respectant les bonnes pratiques DevOps.
-
-## 1. Strategie de deploiement
-
-### 1.1 Vue d'ensemble
-
-<!-- Decrire la strategie globale de deploiement retenue : outil, flux, environnements concernes. -->
-
-### 1.2 Diagramme du pipeline
-
-<!-- Inserer ou decrire le flux de deploiement (etapes, declencheurs, points de controle). -->
-
-## 2. Outillage retenu
-
-<!-- Lister et justifier les outils utilises pour le deploiement automatise. -->
-
-| Outil | Role dans le pipeline | Justification |
-| --- | --- | --- |
-|  |  |  |
-
-## 3. Declenchement du deploiement
-
-<!-- Decrire le mode de declenchement : manuel, sur push, sur tag, sur merge request, etc. -->
-
-### 3.1 Mode de declenchement
-
-### 3.2 Reproductibilite
-
-<!-- Expliquer comment le deploiement peut etre relance de maniere identique. -->
-
-## 4. Controles prealables au deploiement
-
-<!-- Decrire les verifications executees avant le deploiement en production. -->
-
-| Controle | Description | Critere de passage |
-| --- | --- | --- |
-|  |  |  |
-
-## 5. Mise a jour de la production
-
-<!-- Decrire les etapes effectives de mise a jour de l'environnement de production. -->
-
-## 6. Verification post-deploiement
-
-### 6.1 Smoke tests
-
-<!-- Decrire les tests de verification executes apres le deploiement. -->
-
-| Test | Commande ou methode | Resultat attendu |
-| --- | --- | --- |
-|  |  |  |
-
-### 6.2 Preuve de deploiement reussi
-
-<!-- Fournir une preuve du deploiement effectif sur la production (capture, log, etc.). -->
-
-## 7. Conduite a tenir en cas d'echec
-
-<!-- Decrire la procedure en cas d'echec du deploiement : rollback, notification, diagnostic. -->
-
-## 8. Scripts et fichiers de configuration
-
-<!-- Lister et decrire les fichiers cles du pipeline de deploiement. -->
-
-| Fichier | Role |
-| --- | --- |
-|  |  |
+Documentation d’API
+1. Vue d’ensemble de l’API
+Champ	Valeur
+URL de base	http://localhost/api/v1
+Format	JSON
+Authentification	Bearer Token (header Authorization)
+L’API permet de consulter et filtrer les tickets ainsi que d’interagir indirectement avec les interventions via un webhook externe.
+2. Endpoints disponibles
+Méthode	Endpoint	Description	Authentification requise
+GET	/tickets	Liste paginée des tickets	Oui
+GET	/tickets?search=...	Recherche par titre ou référence	Oui
+GET	/tickets?priority=...	Filtre par priorité	Oui
+GET	/tickets/{id}	Détail d’un ticket	Oui
+POST	/tickets	Création d’un ticket	Oui
+PUT/PATCH	/tickets/{id}	Mise à jour d’un ticket	Oui
+POST	/hooks.php	Webhook externe (création intervention + update ticket)	Oui (Basic Auth)
+3. Exemples de requêtes et réponses
+🔹 Récupérer tous les tickets
+curl -H "Authorization: Bearer super_secure_token_2026" \
+     http://localhost/api/v1/tickets
+Réponse :
+{
+  "data": [
+    {
+      "id": 1,
+      "reference": "INC-240301",
+      "title": "Intermittent payment terminal outage",
+      "priority": "critical",
+      "status": "in_progress"
+    }
+  ]
+}
+🔹 Filtrer par priorité
+curl -H "Authorization: Bearer super_secure_token_2026" \
+     "http://localhost/api/v1/tickets?priority=high"
+🔹 Requête invalide (validation)
+curl -H "Authorization: Bearer super_secure_token_2026" \
+     -H "Accept: application/json" \
+     "http://localhost/api/v1/tickets?priority[]=high"
+Réponse :
+{
+  "message": "validation.in",
+  "errors": {
+    "priority": ["validation.in"]
+  }
+}
+🔹 Webhook (mise à jour ticket)
+curl -u secure_user:VeryStrongPassword123! \
+  -H "Accept: application/json" \
+  -d "ticket_reference=INC-240302" \
+  -d "status=resolved" \
+  -d "summary=Resolved by external system" \
+  http://localhost/hooks.php
+Réponse :
+{
+  "message": "Webhook processed.",
+  "intervention_id": 3
+}
+4. Codes d’erreur
+Code	Signification
+200	Requête réussie
+401	Authentification requise ou invalide
+419	CSRF token manquant ou invalide
+422	Données invalides (validation Laravel)
+500	Erreur serveur interne
