@@ -1,54 +1,65 @@
-# Architecture cible et choix de l'hebergement
-
-> Competence evaluee : `C29` — Selectionner une plateforme d'hebergement adaptee aux exigences techniques, economiques, qualitatives et reglementaires.
-
-## 1. Analyse des besoins techniques
-
-<!-- Decrire les besoins techniques de l'application a partir de l'environnement de qualification : composants, dependances, volumetrie estimee, performances attendues. -->
-
-## 2. Architecture cible proposee
-
-### 2.1 Diagramme de deploiement
-
-<!-- Inserer ou decrire le diagramme d'architecture cible (composants, reseaux, services managés ou auto-heberges). -->
-
-### 2.2 Description des composants
-
-<!-- Pour chaque composant de l'architecture cible, decrire le role, le dimensionnement retenu et le service ou la technologie choisis. -->
-
-| Composant | Service ou technologie | Dimensionnement | Justification |
-| --- | --- | --- | --- |
-|  |  |  |  |
-
-## 3. Choix du fournisseur et des services
-
-<!-- Justifier le choix du fournisseur d'hebergement et des services retenus. -->
-
-### 3.1 Fournisseur retenu
-
-### 3.2 Justification du choix
-
-## 4. Estimation des couts
-
-<!-- Fournir une estimation annuelle coherente du cout d'hebergement. -->
-
-| Poste de depense | Cout mensuel estime | Cout annuel estime |
-| --- | --- | --- |
-|  |  |  |
-| **Total** |  |  |
-
-## 5. Elasticite et evolutivite
-
-<!-- Expliquer la strategie retenue pour absorber la croissance de l'application : scalabilite horizontale, verticale, auto-scaling, etc. -->
-
-## 6. Disponibilite et continuite de service
-
-<!-- Decrire les mesures prevues pour garantir la disponibilite : redondance, basculement, SLA cible, tolerance de panne. -->
-
-## 7. Securite et sauvegarde
-
-<!-- Decrire les mesures de securite integrees a l'architecture cible : isolation reseau, chiffrement, gestion des secrets, strategie de sauvegarde. -->
-
-## 8. Conformite et contraintes reglementaires
-
-<!-- Expliciter les contraintes reglementaires prises en compte : protection des donnees, localisation, tracabilite, RGPD, etc. -->
+Documentation d’API
+1. Vue d’ensemble de l’API
+Champ	Valeur
+URL de base	http://localhost/api/v1
+Format	JSON
+Authentification	Bearer Token (header Authorization)
+L’API permet de consulter et filtrer les tickets ainsi que d’interagir indirectement avec les interventions via un webhook externe.
+2. Endpoints disponibles
+Méthode	Endpoint	Description	Authentification requise
+GET	/tickets	Liste paginée des tickets	Oui
+GET	/tickets?search=...	Recherche par titre ou référence	Oui
+GET	/tickets?priority=...	Filtre par priorité	Oui
+GET	/tickets/{id}	Détail d’un ticket	Oui
+POST	/tickets	Création d’un ticket	Oui
+PUT/PATCH	/tickets/{id}	Mise à jour d’un ticket	Oui
+POST	/hooks.php	Webhook externe (création intervention + update ticket)	Oui (Basic Auth)
+3. Exemples de requêtes et réponses
+🔹 Récupérer tous les tickets
+curl -H "Authorization: Bearer super_secure_token_2026" \
+     http://localhost/api/v1/tickets
+Réponse :
+{
+  "data": [
+    {
+      "id": 1,
+      "reference": "INC-240301",
+      "title": "Intermittent payment terminal outage",
+      "priority": "critical",
+      "status": "in_progress"
+    }
+  ]
+}
+🔹 Filtrer par priorité
+curl -H "Authorization: Bearer super_secure_token_2026" \
+     "http://localhost/api/v1/tickets?priority=high"
+🔹 Requête invalide (validation)
+curl -H "Authorization: Bearer super_secure_token_2026" \
+     -H "Accept: application/json" \
+     "http://localhost/api/v1/tickets?priority[]=high"
+Réponse :
+{
+  "message": "validation.in",
+  "errors": {
+    "priority": ["validation.in"]
+  }
+}
+🔹 Webhook (mise à jour ticket)
+curl -u secure_user:VeryStrongPassword123! \
+  -H "Accept: application/json" \
+  -d "ticket_reference=INC-240302" \
+  -d "status=resolved" \
+  -d "summary=Resolved by external system" \
+  http://localhost/hooks.php
+Réponse :
+{
+  "message": "Webhook processed.",
+  "intervention_id": 3
+}
+4. Codes d’erreur
+Code	Signification
+200	Requête réussie
+401	Authentification requise ou invalide
+419	CSRF token manquant ou invalide
+422	Données invalides (validation Laravel)
+500	Erreur serveur interne
